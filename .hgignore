@@ -1,2 +1,4 @@
 syntax: glob
 *.pyc
+node_modules/*
+*.rlib
