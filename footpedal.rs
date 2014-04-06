@@ -1,5 +1,8 @@
+#![crate_type = "lib"]
+
 #![feature(phase)]
 #[phase(syntax, link)] extern crate log;
+
 // #[no_std]
 // #[no_implicit_prelude]
 
@@ -86,7 +89,7 @@ struct PedalEvent {
 
 
 // Read access rights.
-trait Rd: Send {
+pub trait Rd: Send {
     fn full_path(&self) -> ~str;
     fn sub_rd(&self, n: &str) -> IoResult<~Rd: Send>;
     fn open_rd(&self) -> IoResult<~Reader>;
@@ -129,8 +132,8 @@ impl Rd for HidDevs {
 
 
 pub struct ArgvRd {
-    argv: ~[~str],
-    rd: ~Rd: Send
+    pub argv: ~[~str],
+    pub rd: ~Rd: Send
 }
 
 impl Rd for ArgvRd {
