@@ -3,10 +3,11 @@
 
 #[no_implicit_prelude]
 
-use std::io::{IoResult,
-              IoError,
-              PermissionDenied,
-              MismatchedFileTypeForOperation};
+extern crate tame;
+
+use tame::io::{IoResult, IoError, IoErrorKind};
+use tame::io::{PermissionDenied,
+               MismatchedFileTypeForOperation};
 
 
 pub struct FootPedal {
