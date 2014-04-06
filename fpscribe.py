@@ -23,9 +23,8 @@ class FootPedal(object):
     '''
 
     pedal_qty = 3
-    pedal_data_fmt = 'B3xB3x'
-    pedal_data_size = struct.calcsize(pedal_data_fmt)
-    event_size = pedal_data_size * pedal_qty
+    pedal_data = struct.Struct('B3xB3x')
+    event_size = pedal_data.size * pedal_qty
 
     def __init__(self, device):
         def each_event():
@@ -51,12 +50,11 @@ class FootPedal(object):
          PedalEvent(ix=2, pressed=1),
          PedalEvent(ix=3, pressed=1)]
         '''
-        pedals_data = [
-            struct.unpack(cls.pedal_data_fmt,
-                          data[ix:ix + cls.pedal_data_size])
-            for ix in range(0, cls.event_size, cls.pedal_data_size)]
-        return [PedalEvent(ix, status)
-                for (ix, status) in pedals_data]
+        pd = cls.pedal_data
+        pedals_data = [pd.unpack(data[ix:ix + pd.size])
+                       for ix in range(0, cls.event_size, pd.size)]
+        return [PedalEvent(ix, pressed)
+                for (ix, pressed) in pedals_data]
 
 
 PedalEvent = namedtuple('PedalEvent', ['ix', 'pressed'])
