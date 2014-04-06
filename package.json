@@ -1,0 +1,14 @@
+{
+    "name": "footpedal_vec",
+    "repository": {
+	"type": "git",
+	"url": "https://github.com/dckc/fpscribe.git"
+    },
+    "author": "Dan Connolly",
+    "license": "MIT",
+    "dependencies": {
+	"ws": ""
+    },
+    "version": "0.1.1",
+    "main": "footpedal_vec.js"
+}
