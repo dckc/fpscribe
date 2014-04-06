@@ -1,32 +1,17 @@
+//#![no_std]
 #![crate_type = "lib"]
 
-#![feature(phase)]
-#[phase(syntax, link)] extern crate log;
+#[no_implicit_prelude]
 
-// #[no_std]
-// #[no_implicit_prelude]
-
-use std::io;
-use std::io::{IoResult, IoError};
+use std::io::{IoResult,
+              IoError,
+              PermissionDenied,
+              MismatchedFileTypeForOperation};
 
 
-pub fn cap_main(args: || -> ~[~str], usb_hids: ~Rd) {
-    let dev_num = args()[1];
-    match usb_hids.sub_rd(dev_num) {
-        Err(why) => fail!(format!("{}", why)),
-        Ok(hid) => {
-            let fp: FootPedal = FootPedal::new(hid);
-            loop {
-                let e = fp.events.recv();
-                debug!("event: {}", e)
-            }
-        }
-    }
-}
-
-
-struct FootPedal {
-    events: Receiver<~[PedalEvent]>
+pub struct FootPedal {
+    pub events: Receiver<~[PedalEvent]>,
+    pub errs: Receiver<IoError>
 }
 
 
@@ -43,20 +28,21 @@ impl FootPedal {
     //!
     //! [footpedal]: https://code.google.com/p/footpedal/
 
-    fn new(device: ~Rd: Send) -> FootPedal {
+    pub fn new(device: ~Rd: Send) -> FootPedal {
         let (tx, rx) = channel();
+        let (tx_err, rx_err) = channel();
 
         spawn(proc() {
             let mut stream = device.open_rd();
             loop {
                 match stream.read_exact(event_size) {
                     Ok(data) => tx.send(FootPedal::unpack(data)),
-                    Err(why) => fail!("{}", why)
+                    Err(why) => tx_err.send(why)
                 }
             }
         });
 
-        FootPedal{ events: rx }
+        FootPedal{ events: rx, errs: rx_err }
     }
 
     /** Unpack footpedal event data.
@@ -81,8 +67,8 @@ impl FootPedal {
 }
 
 
-#[deriving(Show)]
-struct PedalEvent {
+#[deriving(Show, Eq)]
+pub struct PedalEvent {
     ix: u8,
     pressed: u8  // TODO: bool
 }
@@ -115,7 +101,7 @@ impl Rd for HidDevs {
         } else {
             Err(IoError{ desc: "not a device number",
                          detail: Some(n.to_owned()),
-                         kind: io::PermissionDenied })
+                         kind: PermissionDenied })
         }
     }
 
@@ -126,7 +112,7 @@ impl Rd for HidDevs {
     fn open_rd(&self) -> IoResult<~Reader> {
         Err(IoError{ desc: "cannot open directory",
                      detail: None,
-                     kind: io::MismatchedFileTypeForOperation })
+                     kind: MismatchedFileTypeForOperation })
     }
 }
 
@@ -137,13 +123,16 @@ pub struct ArgvRd {
 }
 
 impl Rd for ArgvRd {
+
     fn sub_rd(&self, n: &str) -> IoResult<~Rd: Send> {
+        use std::io::PermissionDenied;
+
         if self.argv.iter().any(|s| s.as_slice() == n) {
             self.rd.sub_rd(n)
                 } else {
             Err(IoError{ desc: "not CLI arg",
                          detail: Some(n.to_owned()),
-                         kind: io::PermissionDenied })
+                         kind: PermissionDenied })
         }
     }
 

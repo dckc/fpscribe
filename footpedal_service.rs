@@ -6,7 +6,22 @@ extern crate footpedal;
 use std::io::IoResult;
 use std::io::fs::File;
 
-use footpedal::{Rd, HidDevs, ArgvRd, cap_main};
+use footpedal::{Rd, HidDevs, ArgvRd, FootPedal};
+
+
+pub fn cap_main(args: || -> ~[~str], usb_hids: ~Rd) {
+    let dev_num = args()[1];
+    match usb_hids.sub_rd(dev_num) {
+        Err(why) => fail!(format!("{}", why)),
+        Ok(hid) => {
+            let fp: FootPedal = FootPedal::new(hid);
+            loop {
+                let e = fp.events.recv();
+                debug!("event: {}", e)
+            }
+        }
+    }
+}
 
 
 struct PosixFile {
