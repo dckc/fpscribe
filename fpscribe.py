@@ -1,5 +1,6 @@
 from collections import namedtuple
 import logging
+import struct
 
 log = logging.getLogger(__name__)
 
@@ -7,8 +8,8 @@ log = logging.getLogger(__name__)
 def main(argv, usb_hids):
     hid_dev = argv[1]
     fp = FootPedal(usb_hids.sub_rd(hid_dev))
-    for bytes in fp.each_event():
-        log.debug('bytes: %s', [ord(b) for b in bytes])
+    for e in fp.each_event():
+        log.debug('event: %s', e)
 
 
 class FootPedal(object):
@@ -20,14 +21,45 @@ class FootPedal(object):
 
     __ https://code.google.com/p/footpedal/
     '''
+
+    pedal_qty = 3
+    pedal_data_fmt = 'B3xB3x'
+    pedal_data_size = struct.calcsize(pedal_data_fmt)
+    event_size = pedal_data_size * pedal_qty
+
     def __init__(self, device):
         def each_event():
             stream = device.open_rd()
             while 1:
-                bytes = stream.read(8 * 3)
-                yield bytes
+                data = stream.read(self.event_size)
+                if not data:
+                    break
+                yield self.unpack(data)
 
         self.each_event = each_event
+
+    @classmethod
+    def unpack(cls, data):
+        r'''Unpack footpedal event data.
+
+        >>> chunks = [chr(ix) + '\x00\x00\x00\x01\x00\x00\x00'
+        ...           for ix in range(1, 4)]
+        >>> data = ''.join(chunks)
+        >>> FootPedal.unpack(data)
+        ... # doctest: +NORMALIZE_WHITESPACE
+        [PedalEvent(ix=1, pressed=1),
+         PedalEvent(ix=2, pressed=1),
+         PedalEvent(ix=3, pressed=1)]
+        '''
+        pedals_data = [
+            struct.unpack(cls.pedal_data_fmt,
+                          data[ix:ix + cls.pedal_data_size])
+            for ix in range(0, cls.event_size, cls.pedal_data_size)]
+        return [PedalEvent(ix, status)
+                for (ix, status) in pedals_data]
+
+
+PedalEvent = namedtuple('PedalEvent', ['ix', 'pressed'])
 
 
 # Read access rights.
