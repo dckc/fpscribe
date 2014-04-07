@@ -1,8 +1,9 @@
 # fpscribe -- foot pedal transcription
 
-On a MacBook, we use [express scribe] with a We use a VEC USB
-Footpedal. Could a Chromebox do likewise? How good is the Web platform
-support? We get the media via dropbox, after all.
+On a MacBook, we use [express scribe] with a VEC USB footpedal.
+Could a Chromebox do likewise?
+How good is the Web platform support?
+We get the media via dropbox, after all.
 
  [express scribe]: http://www.nch.com.au/scribe/
 
