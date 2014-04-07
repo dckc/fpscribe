@@ -1,11 +1,43 @@
 <h1>Footpad - treat footpedal as gamepad</h1>
 
-<p id='info'>
-</p>
+<table id='footpedal'>
+<tr>
+ <td class="up">|</td>
+ <td class="up">XXX</td>
+ <td class="up">|</td>
+</tr>
+</table>
 
 <script src="footpad.js">
 </script>
 
 <script language='javascript'>
-document.getElementById('info').textContent = endpoint.toString();
+var pedal_ui = (document.getElementById('footpedal')
+                .children[0].children[0]);
+
+function update_ui(g) {
+  var ix, cell;
+  for (ix = 0; ix < 3; ix++) {
+    cell = pedal_ui.children[ix];
+    cell.attributes['class'].value = (
+      g.buttons[ix].pressed ? "down" : "up");
+  }
+}
+
+function mk_socket() {
+  var local_8080 = '127.0.0.1:8080'
+  return new WebSocket('ws://' + local_8080);
+};
+
+function clock() {
+  return window.performance.now();
+};
+
+var gamepad = new FootPad(0, mk_socket, clock, update_ui);
 </script>
+
+<style type="text/css">
+.down { background: red }
+.up { background: green }
+
+</style>
