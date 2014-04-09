@@ -19,6 +19,13 @@ footpad.js: footpad.coffee
 	$(COFFEE) -c footpad.coffee
 
 
+# PureScript
+#PSC=psc
+PSC=$(HOME)/.cabal/bin/psc
+footpedal_vp.js: footpedal_vp.purs
+	$(PSC) $< --main -o $@
+
+
 clean:
 	rm -f footpedal_service libfootpedal-77ad9f83-0.0.rlib \
 		fpscribe
