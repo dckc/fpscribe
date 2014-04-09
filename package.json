@@ -7,7 +7,10 @@
     "author": "Dan Connolly",
     "license": "MIT",
     "dependencies": {
-	"ws": ""
+	"ws": "",
+	"grunt-purescript": "",
+	"grunt-contrib-clean": "",
+	"grunt-execute": ""
     },
     "version": "0.1.1",
     "main": "footpedal_vec.js"
