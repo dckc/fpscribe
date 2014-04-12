@@ -7,6 +7,8 @@ import Control.Reactive
 foreign import require_ws "require 'ws'" ::
     forall jex e. Eff (ex :: Exception jex | e) WsModule
 foreign import data WsModule :: *
+foreign import data Server :: *
+foreign import data Connection :: *
 
 
 foreign import newServer
@@ -32,10 +34,11 @@ foreign import newServer
   \            return incoming;\
   \        };\
   \      };\
-  \}" :: forall eff. WsModule -> { port :: Number } -> RVar [Number] -> Eff (reactive :: Reactive | eff) (RVar String)
+  \}" :: forall eff. WsModule -> { port :: Number } -> Eff (reactive :: Reactive | eff) (RVar (RVar Packet))
 
+data Packet = Text String | Binary [Number]
 
-foreign import 
+foreign import connectSocket
   "function newConnection(conn) {\
   \    return function(options) {\
   \      return function(outgoing) {\
@@ -58,4 +61,4 @@ foreign import
   \            return incoming;\
   \        };\
   \      };\
-  \}" :: forall eff. WsModule -> { port :: Number } -> RVar [Number] -> Eff (reactive :: Reactive | eff) (RVar String)
+  \}" :: forall eff a. (Show a) => WsModule -> Connection -> Eff (reactive :: Reactive | eff) (RVar a)

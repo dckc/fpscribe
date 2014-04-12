@@ -53,6 +53,8 @@ createReadStream fs path (Just {
                        mode: mode,
                        autoClose: autoClose }
 
+foreign import streamObserver :: forall eff. EventStream -> (RVar [Number])
+
 foreign import onEvent
   "function onEvent(stream) {\
   \  return function(tag) {\
