@@ -2,45 +2,36 @@ module.exports = function(grunt) {
 
   "use strict";
 
-  grunt.initConfig({ 
-  
-    libFiles: [
+  grunt.initConfig({
+
+    files: [
       "src/**/*.purs",
       "bower_components/purescript-*/src/**/*.purs",
       "bower_components/purescript-*/src/**/*.purs.hs"
     ],
-    
+
     clean: {
-      tests: ["tmp"],
-      lib: ["js", "externs"]
+      all: ["tmp", "output"],
     },
-  
-    pscMake: ["<%=libFiles%>"],
-    dotPsci: ["<%=libFiles%>"],
-  
-    psc: {
-      tests: {
-        options: {
-          module: ["Main"],
-          main: true
-        },
-        src: ["<%=libFiles%>"],
+ 
+    pscMake: {
+      all: {
+        src: "<%=files%>",
         dest: "js/Main.js"
       }
     },
-    
+
     execute: {
-      tests: {
-        src: "tmp/tests.js"
-      }
-    }      
+	all: {
+            src: "js/Main.js"
+	}
+    }  
   });
 
   grunt.loadNpmTasks("grunt-contrib-clean");
   grunt.loadNpmTasks("grunt-purescript");
   grunt.loadNpmTasks("grunt-execute");
   
-  grunt.registerTask("test", ["clean:tests", "psc:tests", "execute:tests"]);
-  grunt.registerTask("make", ["pscMake", "dotPsci"]);
-  grunt.registerTask("default", ["test", "make"]);
+  grunt.registerTask("psci", ["dotPsci"]);
+  grunt.registerTask("default", ["pscMake"]);
 };
