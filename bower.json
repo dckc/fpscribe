@@ -13,7 +13,10 @@
   "dependencies": {
     "purescript-arrays"               : "*",
     "purescript-maybe"                : "*",
-    "purescript-foldable-traversable" : "*"
+    "purescript-exceptions"           : "*",
+    "purescript-foldable-traversable" : "*",
+    "purescript-foreign"              : "*",
+    "purescript-reactive"             : "*"
   },
   "devDependencies": {
     "purescript-math"                 : "*",

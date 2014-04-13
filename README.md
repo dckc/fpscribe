@@ -85,3 +85,11 @@ The server side of WebSockets is entirely straightforward using [ws].
 In just a few minutes with the [websockets tutorial][3], I had the client side working in Chrome.
 
  [3]: http://www.html5rocks.com/en/tutorials/websockets/basics/
+
+
+@@@@@@@@@
+http://www.haskell.org/haskellwiki/Import
+http://try.purescript.org/compile
+https://github.com/purescript/purescript-reactive/
+http://www.haskell.org/haskellwiki/Typeclassopedia#Applicative
+http://www.purescript.org/posts/Eff-Monad/
