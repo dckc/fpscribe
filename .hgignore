@@ -3,5 +3,5 @@ syntax: glob
 node_modules/*
 *.rlib
 bower_components/
-externs/
-js/
+output/
+.psci
