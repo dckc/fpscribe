@@ -9,10 +9,14 @@ foreign import ws "var ws = require('ws')" ::  WsModule
 foreign import data WsModule :: *
 foreign import data Socket :: *
 
-foreign import newServer
-  "function newServer(ws) {\
-  \  throw \"@@\";\
-  \}" :: forall eff. WsModule -> { port :: Number } ->
+foreign import createServer
+  "function createServer(ws) {\
+  \  return function(options){\
+  \    return function(){\
+  \      return ws.createServer(options);\
+  \    };\
+  \  };\
+  \}" :: forall eff r. WsModule -> { port :: Number } ->
          Eff (node :: Node | eff) (EventEmitter Socket)
 
 foreign import send

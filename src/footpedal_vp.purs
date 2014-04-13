@@ -17,7 +17,7 @@ import qualified Ws as Ws
 
 main = do
   pedalDev <- Fs.createReadStream Fs.fs "/dev/usb/hiddev0" {}
-  endpoint <- Ws.newServer Ws.ws {port: 8080}
+  endpoint <- Ws.createServer Ws.ws {port: 8080}
   service pedalDev endpoint
 
 
