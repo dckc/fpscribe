@@ -28,9 +28,12 @@ type RxEff eff = forall eff. Eff (trace :: Trace,
                                   node :: Ev.Node
                                   | eff) {}
 
---@@service :: forall eff conn. Ev.EventEmitter Fs.Buffer ->
---           Ev.EventEmitter Ws.Socket ->
---           RxEff eff
+service :: forall eff. Ev.EventEmitter Fs.Buffer ->
+           Ev.EventEmitter Ws.Socket ->
+           Eff (trace :: Trace,
+                reactive :: Reactive,
+                node :: Ev.Node
+                | eff) {}
 service dev endpoint = do
   connections <- fromEmitter endpoint "connection"
   trace "awaiting connection..."
@@ -77,7 +80,7 @@ decode bytes = sequence do
 
 
 fromEmitter :: forall eff a. Ev.EventEmitter a -> String ->
-               Eff (reactive :: Reactive, n :: Ev.Node | eff) (RVar (Maybe a))
+               Eff (reactive :: Reactive, node :: Ev.Node | eff) (RVar (Maybe a))
 fromEmitter emitter event = do
   mv <- newRVar Nothing
   Ev.on emitter event $ \input -> do
@@ -85,7 +88,7 @@ fromEmitter emitter event = do
   pure mv
 
 toSocket :: forall eff a. (Show a) => Ws.Socket ->
-            Eff (reactive :: Reactive, n :: Ev.Node | eff) (RVar (Maybe a))
+            Eff (reactive :: Reactive, node :: Ev.Node | eff) (RVar (Maybe a))
 toSocket socket = do
   mv <- newRVar Nothing
   subscribe mv $ update

@@ -15,7 +15,7 @@ foreign import newServer
   "function newServer(ws) {\
   \  raise \"@@\";\
   \}" :: forall eff. WsModule -> { port :: Number } ->
-         Eff (n :: Node | eff) (EventEmitter Socket)
+         Eff (node :: Node | eff) (EventEmitter Socket)
 
 foreign import send
   "function send(socket){\
@@ -25,5 +25,5 @@ foreign import send
   \    };\
   \  };\
   \}" :: forall eff. Socket -> String ->
-         Eff (n :: Node | eff) {}
+         Eff (node :: Node | eff) {}
 

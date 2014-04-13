@@ -17,5 +17,5 @@ foreign import on
   \      };\
   \    };\
   \  };\
-  \}" :: forall eff r i. EventEmitter i ->  String -> (i -> Eff (n :: Node | r) {}) ->
-         Eff (n :: Node | eff) (EventEmitter i)
+  \}" :: forall eff r i. EventEmitter i ->  String -> (i -> Eff (node :: Node | r) {}) ->
+         Eff (node :: Node | eff) (EventEmitter i)
