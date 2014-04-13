@@ -30,18 +30,15 @@ type RxEff eff = forall eff. Eff (trace :: Trace,
 
 service :: forall eff. Ev.EventEmitter Fs.Buffer ->
            Ev.EventEmitter Ws.Socket ->
-           Eff (trace :: Trace,
-                reactive :: Reactive,
-                node :: Ev.Node
-                | eff) {}
+           RxEff eff
 service dev endpoint = do
   connections <- fromEmitter endpoint "connection"
   trace "awaiting connection..."
   subscribe connections runSession
   return {}
       where
-        -- runSession :: forall eff. Ws.Socket -> RxEff eff
-        runSession Nothing = return {} -- diverge? can't happen.
+        runSession :: forall eff. Maybe Ws.Socket -> RxEff eff
+        runSession Nothing = return {} -- diverge? can't happen. push into fromEmitter
         runSession (Just pedalSocket) =
             do
               trace "got connection!"
@@ -58,7 +55,7 @@ service dev endpoint = do
 
 data PedalState = PedalState {pedal:: Number, pressed:: Number}
 
-foreign import unsafeToJSON "JSON.stringify" :: forall a. a -> String
+foreign import unsafeToJSON "var unsafeToJSON = JSON.stringify" :: forall a. a -> String
 
 instance showPedal :: Show PedalState where
     show (PedalState r) = unsafeToJSON r
