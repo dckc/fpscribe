@@ -1,19 +1,17 @@
 module Ws where
 
 import Control.Monad.Eff
-import Control.Monad.Eff.Exception
 import Control.Reactive
 
 import Node.Events (Node(..), EventEmitter(..))
 
-foreign import require_ws "require 'ws'" ::
-    forall jex e. Eff (ex :: Exception jex | e) WsModule
+foreign import ws "var ws = require('ws')" ::  WsModule
 foreign import data WsModule :: *
 foreign import data Socket :: *
 
 foreign import newServer
   "function newServer(ws) {\
-  \  raise \"@@\";\
+  \  throw \"@@\";\
   \}" :: forall eff. WsModule -> { port :: Number } ->
          Eff (node :: Node | eff) (EventEmitter Socket)
 
