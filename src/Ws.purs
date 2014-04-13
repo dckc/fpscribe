@@ -6,14 +6,14 @@ import Control.Reactive
 
 import Node.Events (Node(..), EventEmitter(..))
 
-foreign import require_ws "require 'ws'" ::
+foreign import ws "var ws = require('ws');" ::
     forall jex e. Eff (ex :: Exception jex | e) WsModule
 foreign import data WsModule :: *
 foreign import data Socket :: *
 
 foreign import newServer
   "function newServer(ws) {\
-  \  raise \"@@\";\
+  \  raise(\"@@\");\
   \}" :: forall eff. WsModule -> { port :: Number } ->
          Eff (node :: Node | eff) (EventEmitter Socket)
 

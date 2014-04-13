@@ -16,8 +16,8 @@ import qualified Fs as Fs
 import qualified Ws as Ws
 
 main = do
-  fs <- Fs.require_fs
-  ws <- Ws.require_ws
+  fs <- Fs.fs
+  ws <- Ws.ws
   pedalDev <- Fs.createReadStream fs "/dev/usb/hiddev0" {}
   endpoint <- Ws.newServer ws {port: 8080}
   service pedalDev endpoint
@@ -37,7 +37,7 @@ service dev endpoint = do
   subscribe connections runSession
   return {}
       where
-        runSession :: forall eff. Maybe Ws.Socket -> RxEff eff
+        -- runSession :: forall eff. Maybe Ws.Socket -> RxEff eff
         runSession Nothing = return {} -- diverge? can't happen. push into fromEmitter
         runSession (Just pedalSocket) =
             do

@@ -11,7 +11,7 @@ foreign import data EventEmitter :: * -> *
 foreign import on
   "function on(emitter) {\
   \  return function(event){\
-  \    return function(cb)\
+  \    return function(cb) {\
   \      return function() {\
   \        return emmitter.on(event, cb);\
   \      };\
