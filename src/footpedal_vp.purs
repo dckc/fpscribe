@@ -28,26 +28,30 @@ type RxEff eff = forall eff. Eff (trace :: Trace,
                                   node :: Ev.Node
                                   | eff) {}
 
-service :: forall eff conn. Ev.EventEmitter Fs.Buffer ->
-           Ev.EventEmitter Ws.Socket ->
-           RxEff eff
+--@@service :: forall eff conn. Ev.EventEmitter Fs.Buffer ->
+--           Ev.EventEmitter Ws.Socket ->
+--           RxEff eff
 service dev endpoint = do
-  -- @@connections <- fromEmitter endpoint
-  -- trace "awaiting connection..."
-  -- subscribe connections runSession
+  connections <- fromEmitter endpoint "connection"
+  trace "awaiting connection..."
+  subscribe connections runSession
   return {}
-      -- where
+      where
         -- runSession :: forall eff. Ws.Socket -> RxEff eff
-        -- runSession pedalSocket =
-            --do
-              --trace "got connection!"
-              --  pedal :: RVar (Maybe PedalState)
-              --@@pedalOut <- toSocket pedalSocket
-              --trace "awaiting foot pedal event..."
-              --pedalIn <- fromEmitter dev
-              --subscribe pedalIn $ \bytes -> do
-              --           writeRVar pedalOut (decode bytes)
-              --pure {}
+        runSession Nothing = return {} -- diverge? can't happen.
+        runSession (Just pedalSocket) =
+            do
+              trace "got connection!"
+              pedalOut <- toSocket pedalSocket
+              trace "awaiting foot pedal event..."
+              pedalIn <- fromEmitter dev "data"
+              subscribe pedalIn \x -> notify pedalOut x
+              return {}
+                  where
+                    -- TODO: use filter isJust
+                    notify out Nothing = pure {}
+                    notify out (Just bytes) = do
+                         writeRVar out (decode bytes)
 
 data PedalState = PedalState {pedal:: Number, pressed:: Number}
 
