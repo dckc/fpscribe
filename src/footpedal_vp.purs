@@ -1,6 +1,7 @@
 module Footpedal where
 
 import Control.Monad.Eff
+import Control.Monad.Eff.Exception
 import qualified Control.Applicative as Ap
 -- import qualified Control.Reactive Rx
 import Control.Reactive
@@ -10,39 +11,43 @@ import Data.Traversable (sequence)
 
 import Debug.Trace
 
+import qualified Node.Events as Ev
 import qualified Fs as Fs
 import qualified Ws as Ws
 
 main = do
   fs <- Fs.require_fs
   ws <- Ws.require_ws
-  let endpoint = Ws.newServer ws {port: 8080}
-  let dev = Fs.createReadStream fs "/dev/usb/hiddev0" Nothing
-  service dev endpoint
+  pedalDev <- Fs.createReadStream fs "/dev/usb/hiddev0" {}
+  endpoint <- Ws.newServer ws {port: 8080}
+  service pedalDev endpoint
 
-service :: forall rx. Fs.EventStream ->
-           (RVar (RVar Ws.Packet)) -> rx
+
+type RxEff eff = forall eff. Eff (trace :: Trace,
+                                  reactive :: Reactive,
+                                  node :: Ev.Node
+                                  | eff) {}
+
+service :: forall eff conn. Ev.EventEmitter Fs.Buffer ->
+           Ev.EventEmitter Ws.Socket ->
+           RxEff eff
 service dev endpoint = do
-    trace "awaiting connection..."
-    subscribe endpoint runSession
-    return {}
-        where
-          runSession :: forall rx. (RVar Ws.Packet) -> rx
-          runSession socket = do
-                         trace "got connection!"
-                         trace "awaiting foot pedal event..."
-                         subscribe devOutput $ \bytes -> notify socket (decode bytes)
-                         return {}
-          devOutput = Fs.streamObserver dev
-          notify :: forall eff. (RVar Ws.Packet) -> Maybe [PedalState] -> Eff (reactive :: Reactive, trace :: Trace | eff) {}
-          notify socket info = do
-                         case info of
-                           Just event -> do
-                             trace $ show event
-                             writeRVar socket event
-                           Nothing -> do
-                             trace "bad chunk of data from footpedal device"
-                             return {}
+  -- @@connections <- fromEmitter endpoint
+  -- trace "awaiting connection..."
+  -- subscribe connections runSession
+  return {}
+      -- where
+        -- runSession :: forall eff. Ws.Socket -> RxEff eff
+        -- runSession pedalSocket =
+            --do
+              --trace "got connection!"
+              --  pedal :: RVar (Maybe PedalState)
+              --@@pedalOut <- toSocket pedalSocket
+              --trace "awaiting foot pedal event..."
+              --pedalIn <- fromEmitter dev
+              --subscribe pedalIn $ \bytes -> do
+              --           writeRVar pedalOut (decode bytes)
+              --pure {}
 
 data PedalState = PedalState {pedal:: Number, pressed:: Number}
 
@@ -65,3 +70,22 @@ decode bytes = sequence do
                  return $ PedalState { pedal: pedal_num, pressed: state }
 
 
+
+
+fromEmitter :: forall eff a. Ev.EventEmitter a -> String ->
+               Eff (reactive :: Reactive, n :: Ev.Node | eff) (RVar (Maybe a))
+fromEmitter emitter event = do
+  mv <- newRVar Nothing
+  Ev.on emitter event $ \input -> do
+                              writeRVar mv (Just input)
+  pure mv
+
+toSocket :: forall eff a. (Show a) => Ws.Socket ->
+            Eff (reactive :: Reactive, n :: Ev.Node | eff) (RVar (Maybe a))
+toSocket socket = do
+  mv <- newRVar Nothing
+  subscribe mv $ update
+  pure mv
+    where
+      update Nothing = pure {}
+      update (Just it) = Ws.send socket (show it)
