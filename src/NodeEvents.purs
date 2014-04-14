@@ -13,7 +13,7 @@ foreign import on
   \  return function(event){\
   \    return function(cb){\
   \      return function() {\
-  \        return emmitter.on(event, cb);\
+  \        return emitter.on(event, cb);\
   \      };\
   \    };\
   \  };\
