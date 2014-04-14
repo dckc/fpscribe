@@ -1,6 +1,7 @@
 module Fs where
 
 import Control.Monad.Eff
+import Control.Monad.Eff.Exception
 import Data.Foreign
 import Data.Maybe
 
@@ -20,7 +21,7 @@ foreign import createReadStream
   \      };\
   \    };\
   \  };\
-  \}" :: forall eff opts d. FsModule -> String -> { | opts } ->
-         Eff (n :: Ev.Node | eff) (Ev.EventEmitter d)
+  \}" :: forall eff opts d ex. FsModule -> String -> { | opts } ->
+         Eff (node :: Ev.Node, exc :: Exception ex | eff) (Ev.EventEmitter d)
 
 type Buffer = [Number]  -- cheating a little, I think
