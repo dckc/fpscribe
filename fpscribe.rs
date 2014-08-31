@@ -1,13 +1,13 @@
 #![feature(phase)]
-#[phase(syntax, link)] extern crate log;
+#[phase(plugin, link)] extern crate log;
 
 use std::io;
-use std::io::{IoResult, IoError};
+use std::io::{IoResult, IoError, Reader};
 
 
-fn cap_main(args: || -> ~[~str], usb_hids: ~Rd) {
-    let dev_num = args()[1];
-    match usb_hids.sub_rd(dev_num) {
+fn cap_main(args: || -> Vec<String>, usb_hids: Box<Rd>) {
+    let dev_num = args()[1].clone();
+    match usb_hids.sub_rd(dev_num.as_slice()) {
         Err(why) => fail!(format!("{}", why)),
         Ok(hid) => {
             let fp: FootPedal = FootPedal::new(hid);
@@ -21,7 +21,7 @@ fn cap_main(args: || -> ~[~str], usb_hids: ~Rd) {
 
 
 struct FootPedal {
-    events: Receiver<~[PedalEvent]>
+    events: Receiver<Vec<PedalEvent>>
 }
 
 
@@ -38,11 +38,11 @@ impl FootPedal {
     //!
     //! [footpedal]: https://code.google.com/p/footpedal/
 
-    fn new(device: ~Rd: Send) -> FootPedal {
+    fn new(device: Box<Rd+Send>) -> FootPedal {
         let (tx, rx) = channel();
 
         spawn(proc() {
-            let mut stream = device.open_rd();
+            let mut stream = device.open_rd().unwrap();
             loop {
                 match stream.read_exact(event_size) {
                     Ok(data) => tx.send(FootPedal::unpack(data)),
@@ -65,7 +65,7 @@ impl FootPedal {
      PedalEvent(ix=2, pressed=1),
      PedalEvent(ix=3, pressed=1)]
     */
-    fn unpack(data: ~[u8]) -> ~[PedalEvent] {
+    fn unpack(data: Vec<u8>) -> Vec<PedalEvent> {
         let each = |n: &int| {
             let ix = (n - 1) as uint;
             PedalEvent{ ix: data[ix * pedal_data_size],
@@ -84,39 +84,39 @@ struct PedalEvent {
 
 
 // Read access rights.
-trait Rd: Send {
-    fn full_path(&self) -> ~str;
-    fn sub_rd(&self, n: &str) -> IoResult<~Rd: Send>;
-    fn open_rd(&self) -> IoResult<~Reader>;
+trait Rd {
+    fn full_path(&self) -> String;
+    fn sub_rd(&self, n: &str) -> IoResult<Box<Rd+Send>>;
+    fn open_rd(&self) -> IoResult<Box<Reader+Send>>;
 }
 
 
 struct HidDevs {
-    dev_usb: ~Rd: Send
+    dev_usb: Box<Rd+Send>
 }
 
 impl HidDevs {
-    fn new(fs: ~Rd: Send) -> IoResult<HidDevs> {
+    fn new(fs: Box<Rd>) -> IoResult<HidDevs> {
         fs.sub_rd("/dev/usb").map( |rd| HidDevs { dev_usb: rd } )
     }
 }
 
 impl Rd for HidDevs {
-    fn sub_rd(&self, n: &str) -> IoResult<~Rd: Send> {
+    fn sub_rd(&self, n: &str) -> IoResult<Box<Rd+Send>> {
         if n.char_len() == 1 && n.char_at(0).is_digit() {
-            self.dev_usb.sub_rd("hiddev" + n)
+            self.dev_usb.sub_rd(("hiddev".to_string() + n.to_string()).as_slice())
         } else {
             Err(IoError{ desc: "not a device number",
-                         detail: Some(n.to_owned()),
+                         detail: Some(n.to_string()),
                          kind: io::PermissionDenied })
         }
     }
 
-    fn full_path(&self) -> ~str {
+    fn full_path(&self) -> String {
         self.dev_usb.full_path()
     }
 
-    fn open_rd(&self) -> IoResult<~Reader> {
+    fn open_rd(&self) -> IoResult<Box<Reader+Send>> {
         Err(IoError{ desc: "cannot open directory",
                      detail: None,
                      kind: io::MismatchedFileTypeForOperation })
@@ -125,26 +125,26 @@ impl Rd for HidDevs {
 
 
 struct ArgvRd {
-    argv: ~[~str],
-    rd: ~Rd: Send
+    argv: Vec<String>,
+    rd: Box<Rd+Send>
 }
 
 impl Rd for ArgvRd {
-    fn sub_rd(&self, n: &str) -> IoResult<~Rd: Send> {
+    fn sub_rd(&self, n: &str) -> IoResult<Box<Rd+Send>> {
         if self.argv.iter().any(|s| s.as_slice() == n) {
             self.rd.sub_rd(n)
                 } else {
             Err(IoError{ desc: "not CLI arg",
-                         detail: Some(n.to_owned()),
+                         detail: Some(n.to_string()),
                          kind: io::PermissionDenied })
         }
     }
 
-    fn full_path(&self) -> ~str {
+    fn full_path(&self) -> String {
         self.rd.full_path()
     }
 
-    fn open_rd(&self) -> IoResult<~Reader> {
+    fn open_rd(&self) -> IoResult<Box<Reader+Send>> {
         self.rd.open_rd()
     }
 }
@@ -154,23 +154,25 @@ mod trusted {
     use std::io::IoResult;
     use std::io::fs::File;
 
+    use super::Rd;
+
     pub struct PosixFile {
-        pub path: ~str
+        pub path: String
     }
 
     impl ::Rd for PosixFile {
-        fn full_path(&self) -> ~str {
+        fn full_path(&self) -> String {
             self.path.clone()
         }
 
-        fn sub_rd(&self, n: &str) -> IoResult<~::Rd: Send> {
-            let sub_path: ~str = self.path + "/" + n; // TODO: real path join
-            Ok(~PosixFile{ path: sub_path} as ~::Rd:Send)
+        fn sub_rd(&self, n: &str) -> IoResult<Box<Rd+Send>> {
+            let sub_path = self.path + "/" + n; // TODO: real path join
+            Ok(box PosixFile{ path: sub_path} as Box<Rd+Send>)
         }
 
-        fn open_rd(&self) -> IoResult<~Reader> {
+        fn open_rd(&self) -> IoResult<Box<Reader+Send>> {
             let rf: IoResult<File> = File::open(&Path::new(self.path.clone()));
-            rf.map(|f| ~f as ~Reader)
+            rf.map(|f| box f as Box<Reader+Send>)
         }
     }
 }
@@ -178,9 +180,9 @@ mod trusted {
 fn main() {
     use std::os::args;
 
-    let root_rd: ~Rd:Send = ~::trusted::PosixFile{ path: ~"/" };
-    let hid_devs = ~HidDevs::new(root_rd).unwrap() as ~Rd:Send;
-    let arg_dev_rd = ~ArgvRd{ argv: args(), rd: hid_devs } as ~Rd;
+    let root_rd: Box<Rd> = box ::trusted::PosixFile{ path: "/".to_string() };
+    let hid_devs = box HidDevs::new(root_rd).unwrap() as Box<Rd+Send>;
+    let arg_dev_rd = box ArgvRd{ argv: args(), rd: hid_devs } as Box<Rd>;
 
     cap_main(args, arg_dev_rd)
 }
