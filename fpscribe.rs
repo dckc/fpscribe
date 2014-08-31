@@ -6,8 +6,10 @@ use std::io::{IoResult, IoError, Reader};
 
 
 fn cap_main(args: || -> Vec<String>, usb_hids: Box<Rd>) {
-    let dev_num = args()[1].clone();
-    match usb_hids.sub_rd(dev_num.as_slice()) {
+    let argv = args();
+    let dev_num = argv[1].as_slice();
+
+    match usb_hids.sub_rd(dev_num) {
         Err(why) => fail!(format!("{}", why)),
         Ok(hid) => {
             let fp: FootPedal = FootPedal::new(hid);
