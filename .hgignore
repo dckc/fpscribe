@@ -1,2 +1,7 @@
 syntax: glob
 *.pyc
+node_modules/*
+*.rlib
+bower_components/
+output/
+.psci
